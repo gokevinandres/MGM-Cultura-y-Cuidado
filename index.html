@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MGM — Simulador de Gestión de Activos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<!-- Cursor personalizado de casco de ingeniero -->
+<style>
+  body { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><text y="24" font-size="24">👷‍♂️</text></svg>'), auto; }
+</style>
+</head>
+<body>
+
+<!-- ══ CANVAS DE HERRAMIENTAS VOLANDO ══ -->
+<canvas id="bgCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none;"></canvas>
+
+<!-- ══ BARRA SUPERIOR INSTITUCIONAL ══ -->
+<div style="position: fixed; top: 0; left: 0; right: 0; height: 75px; background: #ffffff; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; padding: 0 50px; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+  <div style="display: flex; align-items: center; gap: 15px;">
+    <img src="logo-mgm.png" alt="MGM" style="height: 45px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <div style="display: none; background: #B5194B; color: white; font-weight: 900; font-size: 20px; padding: 8px 14px; border-radius: 8px; font-family: 'DM Sans', sans-serif;">MGM</div>
+    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+      <span style="font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 14px; color: #104C8F;">MGM Ingeniería y Proyectos S.A.S.</span>
+      <span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #666;">Gestión Humana y Calidad</span>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 15px;">
+    <span style="font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 13px; color: #104C8F; text-align: right;">
+      Universidad Escuela Colombiana de Ingeniería Julio Garavito <br>
+      <span style="font-size: 11px; color: #666; font-weight: 500;">Trabajo Dirigido · Ingeniería Eléctrica</span>
+    </span>
+    <img src="logo-universidad.png" alt="Universidad" style="height: 45px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <div style="display: none; width: 45px; height: 45px; background: #104C8F; color: white; align-items: center; justify-content: center; border-radius: 50%; font-size: 20px;">🎓</div>
+  </div>
+</div>
+
+<!-- ══ INTRO SCREEN ══ -->
+<div class="intro-screen" id="introScreen" style="z-index: 10; background: transparent;">
+  <div class="intro-content" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.8);">
+    <div class="intro-badge">
+      <span class="intro-badge-dot"></span>
+      Simulador de Cultura y Control
+    </div>
+    <h1 class="intro-title">
+      <span class="intro-title-line">Cultura de Cuidado</span>
+      <span class="intro-title-line accent-line">y Trazabilidad</span>
+    </h1>
+    <p class="intro-desc">Toma decisiones reales sobre los activos de la empresa y descubre cómo impactan la operación, los costos y la disponibilidad.</p>
+    
+    <div class="intro-stats">
+      <div class="istat"><span class="istat-num">5</span><span class="istat-label">Escenarios</span></div>
+      <div class="istat-div"></div>
+      <div class="istat"><span class="istat-num">~15</span><span class="istat-label">Minutos</span></div>
+      <div class="istat-div"></div>
+      <div class="istat"><span class="istat-num">100%</span><span class="istat-label">Práctico</span></div>
+    </div>
+
+    <div class="name-input-container" style="margin-bottom: 30px;">
+      <input type="text" id="playerName" placeholder="Tu nombre y cargo (Ej. Juan - Almacén)" class="player-name-input" style="width: 350px; max-width: 100%;">
+    </div>
+
+    <button class="btn-launch" id="btnLaunch">
+      <span>Iniciar Simulador</span>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══ APP PRINCIPAL ══ -->
+<div class="app" id="mainApp" style="display:none; padding-top: 75px; position: relative; z-index: 10; background: var(--bg);">
+  <header class="app-header" id="appHeader">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-mark" style="background: #B5194B;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2C6 2 2 6 2 11s4 9 9 9 9-4 9-9" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="3" fill="white"/></svg>
+        </div>
+        <div>
+          <span class="logo-name">MGM</span>
+          <span class="logo-sub">Gestión de Activos</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="progress-track" id="progressTrack"></div>
+    </div>
+    <div class="header-right">
+      <div class="global-score-badge" id="globalScoreBadge">
+        <div class="gsb-label">Puntuación</div>
+        <div class="gsb-value" id="globalScore">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="vitals-bar" id="vitalsBar">
+    <div class="vitals-inner">
+      <div class="vital" id="vit-trazabilidad">
+        <div class="vital-label">🔍 Trazabilidad</div>
+        <div class="vital-track"><div class="vital-fill" id="vf-trazabilidad" style="width:50%"></div></div>
+        <span class="vital-num" id="vn-trazabilidad">50</span>
+      </div>
+      <div class="vital-sep"></div>
+      <div class="vital" id="vit-disponibilidad">
+        <div class="vital-label">🔧 Disponibilidad</div>
+        <div class="vital-track"><div class="vital-fill" id="vf-disponibilidad" style="width:50%"></div></div>
+        <span class="vital-num" id="vn-disponibilidad">50</span>
+      </div>
+      <div class="vital-sep"></div>
+      <div class="vital" id="vit-cumplimiento">
+        <div class="vital-label">📋 Cumplimiento</div>
+        <div class="vital-track"><div class="vital-fill" id="vf-cumplimiento" style="width:50%"></div></div>
+        <span class="vital-num" id="vn-cumplimiento">50</span>
+      </div>
+      <div class="vital-sep"></div>
+      <div class="vital" id="vit-costo">
+        <div class="vital-label">⚠️ Riesgo Operativo</div>
+        <div class="vital-track"><div class="vital-fill stress" id="vf-costo" style="width:30%"></div></div>
+        <span class="vital-num" id="vn-costo">30</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="mod-nav" id="modNav">
+    <div class="mod-nav-inner" id="modNavInner"></div>
+  </nav>
+
+  <main class="main-content" id="mainContent"></main>
+</div>
+
+<!-- ══ DECISION MODAL ══ -->
+<div class="modal-overlay" id="decisionModal" style="display:none">
+  <div class="modal-card decision-card">
+    <div class="dc-header">
+      <div class="dc-stamp" id="dStamp">DECISIÓN</div>
+      <div class="dc-scene" id="dScene"></div>
+    </div>
+    <h3 class="dc-title" id="dTitle"></h3>
+    <p class="dc-text" id="dText"></p>
+    <div class="dc-context" id="dContext" style="display:none"></div>
+    <div class="dc-options" id="dOptions"></div>
+  </div>
+</div>
+
+<!-- ══ FINAL RESULTS ══ -->
+<div class="results-overlay" id="resultsScreen" style="display:none">
+  <div class="results-inner">
+    <div class="results-card">
+      <div class="rc-top">
+        <div class="rc-medal" id="rcMedal">🏆</div>
+        <div class="rc-rank" id="rcRank"></div>
+        <h2 class="rc-title" id="rcTitle">Simulación Completada</h2>
+        <p class="rc-sub" id="rcSub"></p>
+      </div>
+      <div class="rc-score-big">
+        <div class="rc-score-ring">
+          <div class="rc-score-center">
+            <span class="rc-score-num" id="rcScoreNum">0</span>
+            <span class="rc-score-max">/ 500 pts</span>
+          </div>
+        </div>
+      </div>
+      <div class="rc-breakdown" id="rcBreakdown"></div>
+      <div class="rc-recs" id="rcRecs"></div>
+      <div class="rc-actions" id="rcActions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+<div class="edu-bar" id="eduBar"><div class="edu-bar-inner" id="eduBarInner"></div></div>
+
+<script src="app.js"></script>
+</body>
+</html>
