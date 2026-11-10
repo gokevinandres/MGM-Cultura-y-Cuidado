@@ -260,95 +260,77 @@ p { max-width: 62ch; }
   }
   .vital-sep { display: none; }
 }
+/* ══════════════════════════════════════════════════════════════
+   ESTILOS DE LA NUEVA BARRA SUPERIOR (ESCRITORIO)
+   ══════════════════════════════════════════════════════════════ */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 75px;
+  background: #ffffff; border-bottom: 1px solid #E2E8F0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 50px; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.top-bar-left, .top-bar-right { display: flex; align-items: center; gap: 15px; }
+.logo-img { height: 45px; object-fit: contain; }
+.logo-fallback { display: none; background: #B5194B; color: white; font-weight: 900; font-size: 20px; padding: 8px 14px; border-radius: 8px; font-family: 'DM Sans', sans-serif; width: fit-content; }
+.top-bar-text { display: flex; flex-direction: column; line-height: 1.2; }
+.company-name { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 14px; color: #104C8F; }
+.company-sub { font-family: 'DM Sans', sans-serif; font-size: 11px; color: #666; font-weight: 500; }
 
-/* Celulares y pantallas pequeñas (hasta 768px) */
+/* Ajustes para que el contenido no quede debajo de la barra fija */
+.intro-screen { padding-top: 110px; }
+.app { padding-top: 75px; }
+
+/* ══════════════════════════════════════════════════════════════
+   MAGIA RESPONSIVE (TABLETS Y CELULARES)
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .mod-hero { grid-template-columns: 1fr; }
+  .mod-stat-panel { margin-top: 20px; }
+  .vitals-inner { flex-wrap: wrap; justify-content: center; }
+  .vital { flex: 0 0 45%; }
+  .vital-sep { display: none; }
+}
+
 @media (max-width: 768px) {
-  /* 1. Barra institucional superior */
-  div[style*="position: fixed; top: 0;"] {
-    height: auto !important;
-    flex-direction: column !important;
-    padding: 10px !important;
-    gap: 10px;
-    position: relative !important; /* Deja de ser fija para no tapar el contenido */
+  /* 1. Barra superior adaptada a celular (se apila verticalmente) */
+  .top-bar {
+    position: relative; /* Deja de ser fija para no quitar espacio */
+    height: auto; flex-direction: column; padding: 15px; gap: 15px;
   }
-  div[style*="position: fixed; top: 0;"] img {
-    height: 35px !important; /* Hace los logos más pequeños */
-  }
-  div[style*="position: fixed; top: 0;"] span {
-    font-size: 10px !important;
-    text-align: center;
-  }
-
-  /* 2. Pantalla de inicio */
-  .intro-screen {
-    padding-top: 20px !important;
-  }
-  .intro-title {
-    font-size: 2.5rem !important; /* Título más pequeño */
-  }
-  .intro-content {
-    padding: 20px !important;
-  }
-  .player-name-input {
-    width: 100% !important;
-  }
-  .intro-modules {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* 3. Cabecera de la app */
-  .app { padding-top: 0 !important; }
-  .app-header {
-    grid-template-columns: 1fr auto !important;
-    padding: 10px 15px !important;
-    top: 0 !important;
-  }
-  .header-center { display: none; } /* Ocultamos los puntitos de progreso */
-  .logo-mark { width: 35px; height: 35px; }
-
-  /* 4. Barra de indicadores (Trazabilidad, etc.) */
-  .vitals-bar { padding: 10px 15px; top: auto !important; }
-  .vital { flex: 0 0 100%; margin-bottom: 10px; } /* Una columna por indicador */
-
-  /* 5. Navegación de Módulos */
-  .mod-nav { top: 0 !important; position: relative; }
-  .mod-nav-inner {
-    justify-content: flex-start;
-    padding: 0 10px;
-  }
-  .mod-tab {
-    padding: 10px 12px;
-    font-size: 12px;
-  }
-  .mod-tab-icon { display: none; } /* Ocultamos el iconito para que quepa el texto */
-
-  /* 6. Contenido principal */
-  .main-content {
-    padding: 20px 15px 90px;
-  }
-  .mod-hero h1 {
-    font-size: 1.8rem;
-  }
-  .facts-grid {
-    grid-template-columns: 1fr; /* Tarjetas de conceptos una debajo de otra */
-  }
-
-  /* 7. Modales y Resultados */
-  .modal-card {
-    padding: 20px;
-    width: 95%;
-  }
-  .results-card {
-    padding: 25px 15px;
-  }
-  .rc-breakdown {
-    grid-template-columns: 1fr;
-  }
-  .rc-actions {
-    flex-direction: column;
-  }
-  .rc-score-num {
-    font-size: 2.2rem;
-  }
+  .top-bar-right { flex-direction: column-reverse; text-align: center; gap: 5px; }
+  .top-bar-left { flex-direction: column; text-align: center; gap: 5px; }
+  .logo-img { height: 35px; }
+  
+  /* 2. Ajustes de la App */
+  .app { padding-top: 0; }
+  .app-header { grid-template-columns: 1fr auto; padding: 10px 15px; top: 0; }
+  .header-center { display: none; }
+  
+  /* 3. Pantalla de Inicio */
+  .intro-screen { padding-top: 20px; }
+  .intro-title { font-size: 2.8rem; }
+  .intro-content { padding: 20px; }
+  .player-name-input { width: 100%; }
+  
+  /* 4. Indicadores */
+  .vitals-bar { padding: 10px 15px; }
+  .vital { flex: 0 0 100%; margin-bottom: 5px; }
+  
+  /* 5. Navegación de Módulos (Scroll horizontal) */
+  .mod-nav { position: relative; top: 0; }
+  .mod-nav-inner { justify-content: flex-start; padding: 0 10px; }
+  .mod-tab { padding: 10px 12px; font-size: 12px; }
+  .mod-tab-icon { display: none; }
+  
+  /* 6. Contenido */
+  .main-content { padding: 20px 15px 90px; }
+  .mod-hero h1 { font-size: 1.8rem; }
+  .facts-grid { grid-template-columns: 1fr; }
+  
+  /* 7. Modales */
+  .modal-card { padding: 20px; width: 95%; }
+  .results-card { padding: 25px 15px; }
+  .rc-breakdown { grid-template-columns: 1fr; }
+  .rc-actions { flex-direction: column; }
 }
