@@ -224,20 +224,73 @@ p { max-width: 62ch; }
 .player-name-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(181,25,75,0.2); }
 
 @media (max-width: 768px) {
-  .app-header { padding: 12px 20px; grid-template-columns: auto auto; }
-  .header-center { display: none; }
-  .vitals-bar { padding: 10px 20px; }
-  .vitals-inner { gap: 12px; }
-  .vital-label { min-width: 70px; font-size: 10px; }
-  .vital-num { font-size: 12px; }
-  .mod-nav-inner { padding: 0 20px; justify-content: flex-start; }
-  .mod-tab { font-size: 13px; padding: 14px 18px; }
-  .main-content { padding: 24px 20px 90px; }
-  .mod-hero { grid-template-columns: 1fr; }
-  .mod-stat-panel { display: none; }
-  .facts-grid { grid-template-columns: 1fr 1fr; }
-  .rc-breakdown { grid-template-columns: 1fr; }
-  .results-card { padding: 28px 22px; }
+  /* 1. Estructura general y barras de navegación */
+  .app-header { 
+    padding: 12px 20px; 
+    grid-template-columns: auto auto; 
+  }
+  .header-center { 
+    display: none; 
+  }
+  
+  /* 2. Ocultar los textos institucionales largos en celulares para ganar espacio */
+  .top-bar-text, 
+  .header-right span {
+    display: none !important;
+  }
+
+  /* 3. Reducir la barra superior fija superior y sus logos */
+  div[style*="position: fixed"] {
+    padding: 0 15px !important;
+    height: 60px !important;
+  }
+  img[src*="logo"] {
+    height: 35px !important;
+  }
+
+  /* 4. Adaptar contenedores y espacios principales */
+  .app {
+    padding-top: 65px !important;
+  }
+  .vitals-bar { 
+    padding: 10px 20px; 
+  }
+  .vitals-inner { 
+    gap: 12px; 
+  }
+  .vital-label { 
+    min-width: 70px; 
+    font-size: 10px; 
+  }
+  .vital-num { 
+    font-size: 12px; 
+  }
+  .mod-nav-inner { 
+    padding: 0 20px; 
+    justify-content: flex-start; 
+  }
+  .mod-tab { 
+    font-size: 13px; 
+    padding: 14px 18px; 
+  }
+  .main-content { 
+    padding: 24px 20px 90px; 
+  }
+  .mod-hero { 
+    grid-template-columns: 1fr; 
+  }
+  .mod-stat-panel { 
+    display: none; 
+  }
+  .facts-grid { 
+    grid-template-columns: 1fr 1fr; 
+  }
+  .rc-breakdown { 
+    grid-template-columns: 1fr; 
+  }
+  .results-card { 
+    padding: 28px 22px; 
+  }
 }
 /* ══════════════════════════════════════════════════════════════
    DISEÑO RESPONSIVE DEFINITIVO (CELULARES)
