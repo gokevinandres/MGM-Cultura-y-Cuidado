@@ -239,3 +239,116 @@ p { max-width: 62ch; }
   .rc-breakdown { grid-template-columns: 1fr; }
   .results-card { padding: 28px 22px; }
 }
+/* ══════════════════════════════════════════════════════════════
+   DISEÑO RESPONSIVE (CELULARES Y TABLETS)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Tablets y pantallas medianas (hasta 1024px) */
+@media (max-width: 1024px) {
+  .mod-hero {
+    grid-template-columns: 1fr; /* Pone el panel de datos debajo del texto */
+  }
+  .mod-stat-panel {
+    margin-top: 20px;
+  }
+  .vitals-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .vital {
+    flex: 0 0 45%; /* Pone los indicadores en 2 columnas */
+  }
+  .vital-sep { display: none; }
+}
+
+/* Celulares y pantallas pequeñas (hasta 768px) */
+@media (max-width: 768px) {
+  /* 1. Barra institucional superior */
+  div[style*="position: fixed; top: 0;"] {
+    height: auto !important;
+    flex-direction: column !important;
+    padding: 10px !important;
+    gap: 10px;
+    position: relative !important; /* Deja de ser fija para no tapar el contenido */
+  }
+  div[style*="position: fixed; top: 0;"] img {
+    height: 35px !important; /* Hace los logos más pequeños */
+  }
+  div[style*="position: fixed; top: 0;"] span {
+    font-size: 10px !important;
+    text-align: center;
+  }
+
+  /* 2. Pantalla de inicio */
+  .intro-screen {
+    padding-top: 20px !important;
+  }
+  .intro-title {
+    font-size: 2.5rem !important; /* Título más pequeño */
+  }
+  .intro-content {
+    padding: 20px !important;
+  }
+  .player-name-input {
+    width: 100% !important;
+  }
+  .intro-modules {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 3. Cabecera de la app */
+  .app { padding-top: 0 !important; }
+  .app-header {
+    grid-template-columns: 1fr auto !important;
+    padding: 10px 15px !important;
+    top: 0 !important;
+  }
+  .header-center { display: none; } /* Ocultamos los puntitos de progreso */
+  .logo-mark { width: 35px; height: 35px; }
+
+  /* 4. Barra de indicadores (Trazabilidad, etc.) */
+  .vitals-bar { padding: 10px 15px; top: auto !important; }
+  .vital { flex: 0 0 100%; margin-bottom: 10px; } /* Una columna por indicador */
+
+  /* 5. Navegación de Módulos */
+  .mod-nav { top: 0 !important; position: relative; }
+  .mod-nav-inner {
+    justify-content: flex-start;
+    padding: 0 10px;
+  }
+  .mod-tab {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .mod-tab-icon { display: none; } /* Ocultamos el iconito para que quepa el texto */
+
+  /* 6. Contenido principal */
+  .main-content {
+    padding: 20px 15px 90px;
+  }
+  .mod-hero h1 {
+    font-size: 1.8rem;
+  }
+  .facts-grid {
+    grid-template-columns: 1fr; /* Tarjetas de conceptos una debajo de otra */
+  }
+
+  /* 7. Modales y Resultados */
+  .modal-card {
+    padding: 20px;
+    width: 95%;
+  }
+  .results-card {
+    padding: 25px 15px;
+  }
+  .rc-breakdown {
+    grid-template-columns: 1fr;
+  }
+  .rc-actions {
+    flex-direction: column;
+  }
+  .rc-score-num {
+    font-size: 2.2rem;
+  }
+}
