@@ -47,418 +47,918 @@ function animateTools() {
 }
 animateTools();
 
-// ── 2. LÓGICA DEL SIMULADOR ──
-let playerName = localStorage.getItem("playerName") || "Usuario MGM";
-const PS = { trazabilidad: 50, disponibilidad: 50, cumplimiento: 50, costo: 30 };
-const MODULE_SCORES = [0,0,0,0,0];
-let currentMod = 0;
-const completed = new Set();
-let globalScore = 0; // Puntaje total sobre 500
-
-const MODULES = [
-  { id:'entrega', name:'1. Entrega y Devolución', idx:0, colorHex:'#104C8F', icon:'📦', headline:'El ciclo de vida del activo', subtext:'La trazabilidad no empieza en el almacén, empieza cuando el trabajador recibe la herramienta.', stats:[{label:'Dificultad devolución', val:'Alta', cls:'bad'}, {label:'Impacto en costos', val:'Directo', cls:'bad'}], facts:[{icon:'📝', title:'Registro formal', body:'El formato de entrega es el único respaldo legal.'}, {icon:'🤝', title:'Compromiso', body:'Firmar el compromiso es aceptar la responsabilidad.'}], type: 'game' },
-  { id:'inspeccion', name:'2. Inspección y Novedades', idx:1, colorHex:'#B5194B', icon:'📋', headline:'Reportar a tiempo salva el proyecto', subtext:'Ocultar un daño genera compras innecesarias. El reporte transparente es un valor corporativo.', stats:[{label:'Riesgo de ocultamiento', val:'Crítico', cls:'bad'}, {label:'Costo de reparación', val:'Evitable', cls:'good'}], facts:[{icon:'🔍', title:'Inspección', body:'Revisar el 100% de los activos evita daños.'}, {icon:'🚨', title:'Reporte', body:'Un daño reportado permite activar garantías.'}], type: 'game' },
-  { id:'impacto', name:'3. Impacto Financiero', idx:2, colorHex:'#EAB308', icon:'💸', headline:'El costo oculto de una pérdida', subtext:'Una herramienta perdida no cuesta solo su precio. Afecta la rentabilidad y los bonos.', stats:[{label:'Costo real', val:'x3 el valor', cls:'bad'}, {label:'Impacto en bonos', val:'Directo', cls:'bad'}], facts:[{icon:'⏱️', title:'Tiempo perdido', body:'Buscar una herramienta perdida consume horas de trabajo.'}, {icon:'📉', title:'Rentabilidad', body:'Sin rentabilidad, no hay recursos para nuevos proyectos.'}], type: 'calculator' },
-  { id:'cultura', name:'4. Compromiso y Cultura', idx:3, colorHex:'#5B1A96', icon:'🤝', headline:'El control es una responsabilidad compartida', subtext:'Almacén, supervisores y usuarios deben entender el impacto de sus decisiones.', stats:[{label:'Liderazgo visible', val:'Esencial', cls:'good'}, {label:'Cultura de reporte', val:'Transparencia', cls:'good'}], facts:[{icon:'🌟', title:'Reconocimiento', body:'Reconocer a quien reporta a tiempo fomenta la transparencia.'}, {icon:'⚖️', title:'Incentivos', body:'Si solo medimos avance de obra, descuidaremos las herramientas.'}], type: 'game' },
-  { id:'seguridad', name:'5. Riesgo y Seguridad', idx:4, colorHex:'#E74C3C', icon:'⚠️', headline:'Un activo dañado es un riesgo para ti', subtext:'Usar herramientas en mal estado puede causar accidentes graves.', stats:[{label:'Riesgo eléctrico', val:'Alto', cls:'bad'}, {label:'Cultura de seguridad', val:'Prioridad', cls:'good'}], facts:[{icon:'⚡', title:'Seguridad', body:'Un multímetro dañado puede causar una descarga fatal.'}, {icon:'🛡️', title:'Prevención', body:'Reportar un activo en mal estado protege a todos.'}], type: 'game' }
+// ── 2. FRENTES Y DATOS ──
+const FRENTES = [
+  {
+    id: 'comercial',
+    name: 'Comercial',
+    icon: '💼',
+    colorHex: '#104C8F',
+    short: 'Cotización y ofertas con información incompleta.',
+    diagnostico: {
+      titulo: 'Proceso de Formulación de Ofertas',
+      bloques: [
+        {
+          titulo: 'Cuello de botella: el "trabajo invisible" (doble digitación en Excel)',
+          parrafos: [
+            'El proceso actual de estructuración de ofertas presenta una alta dependencia de la transferencia manual de información. El flujo operativo exige exportar los Análisis de Precios Unitarios (APUs) desde el software de estimación, para luego ser consolidados en una matriz de costos en Excel y, finalmente, trasladar dichos datos a una segunda matriz destinada al cálculo de precios de venta.',
+            'Esta fragmentación genera dos problemáticas principales: primero, una limitación en la capacidad analítica del equipo, al destinar la mayor parte de su tiempo a labores de digitación y transcripción de datos (actividades de bajo valor agregado); y segundo, una alta vulnerabilidad a errores humanos en la manipulación de cifras críticas para la rentabilidad del negocio.'
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 'tecnico',
+    name: 'Técnico',
+    icon: '🛠️',
+    colorHex: '#5B1A96',
+    short: 'Diseño y entregables con exceso de formatos físicos.',
+    diagnostico: {
+      titulo: 'Proceso de Diseño',
+      bloques: [
+        {
+          titulo: 'Cuello de botella: exceso de formatos y actas físicas',
+          parrafos: [
+            'El procedimiento de diseño presenta una marcada dependencia de la gestión documental física, exigiendo el diligenciamiento de más de 11 formatos y la firma presencial en "Actas de mesa de trabajo" para validar la transición entre etapas.',
+            'Esta estructura genera una fricción operativa significativa, ya que el talento de ingeniería destina una proporción crítica de su jornada a tareas administrativas y logísticas (búsqueda de firmas, impresión, archivo y escaneo) en detrimento de sus funciones técnicas. Como consecuencia directa, se afecta el lead time de los entregables (planos y memorias de cálculo) y se limita la agilidad en la respuesta hacia las áreas de ejecución.'
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 'operativo',
+    name: 'Operativo',
+    icon: '⚙️',
+    colorHex: '#B5194B',
+    short: 'Abastecimiento, activos y trazabilidad en obra.',
+    diagnostico: {
+      titulo: 'Proceso de Abastecimiento y Control de Activos',
+      bloques: [
+        {
+          titulo: 'Gestión documental de proveedores',
+          parrafos: [
+            'El proceso de abastecimiento comprende cuatro subprocesos: compras, contratos, control de inventarios y gestión de materiales y suministros. Su finalidad es garantizar la disponibilidad de materiales, equipos, herramientas, mano de obra y servicios requeridos para la ejecución de los proyectos.',
+            'Se identifica que algunos proveedores no entregan los certificados de conformidad de producto correspondientes a los materiales suministrados. Esta situación representa una dificultad para la verificación documental de los productos recibidos y el cumplimiento de los requisitos de calidad establecidos para los suministros.'
+          ]
+        },
+        {
+          titulo: 'Gestión de maquinaria y herramientas (Cultura de Cuidado)',
+          parrafos: [
+            'La gestión de maquinaria y herramientas comprende las solicitudes de equipos requeridos por los proyectos y su posterior envío hacia los lugares de ejecución de las obras. Se identifican las siguientes situaciones críticas:'
+          ],
+          lista: [
+            'Deterioro de equipos: equipos que llegan dañados a los proyectos o que sufren deterioro durante su utilización.',
+            'Falta de devolución de equipos: al finalizar las obras, algunos equipos no son retornados al almacén.',
+            'Control de equipos en obra: dificultades en el seguimiento de ubicación, estado y responsable de custodia.'
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 'reto',
+    name: 'El Reto',
+    icon: '🎯',
+    colorHex: '#EAB308',
+    short: 'La pregunta central: incertidumbre, información incompleta e inmediatez.',
+    diagnostico: {
+      titulo: 'Rediseño Organizacional frente a la Incertidumbre',
+      bloques: [
+        {
+          titulo: '¿Cuál es el reto central de MGM?',
+          parrafos: [
+            '"¿Cómo rediseñar y optimizar nuestros procesos comerciales, técnicos y operativos para responder de manera eficiente a entornos de alta incertidumbre, información incompleta y requerimientos de mayor inmediatez por parte de los clientes?"'
+          ]
+        },
+        {
+          titulo: 'El modelo a cambiar',
+          parrafos: [
+            'Históricamente, MGM ha operado con un modelo secuencial de "compromiso total", asumiendo que la información siempre está completa y es estable. Sin embargo, la realidad del sector energético exige un cambio de paradigma: pasar al compromiso por etapas, gestionando la modularidad, los supuestos explícitos y las decisiones reversibles.'
+          ]
+        },
+        {
+          titulo: '¿Cómo aportan los 3 frentes a este reto?',
+          lista: [
+            'Comercial: Permite cotizar de forma modular y rápida, declarando supuestos claros en lugar de esperar a tener todos los planos, reduciendo el tiempo de respuesta.',
+            'Técnico: Implementa el diseño por etapas y gates de revisión, permitiendo avanzar con matrices de supuestos sin que la falta de un plano detenga toda la operación.',
+            'Operativo: Garantiza la ejecución mediante trazabilidad digital en tiempo real (QR y reportes), evitando que la obra se detenga por pérdida de herramientas.'
+          ]
+        }
+      ]
+    }
+  }
 ];
 
-function modStat(key, delta) {
-  PS[key] = Math.max(0, Math.min(100, PS[key] + delta));
-  renderVitals();
-}
+// ── 3. FUNCIONES PRINCIPALES ──
 
-function renderVitals() {
-  ['trazabilidad','disponibilidad','cumplimiento','costo'].forEach(k => {
-    const fill = document.getElementById(`vf-${k}`);
-    const num  = document.getElementById(`vn-${k}`);
-    if (!fill || !num) return;
-    fill.style.width = PS[k] + '%';
-    num.textContent  = Math.round(PS[k]);
-    fill.className   = 'vital-fill';
-    if (k === 'costo') fill.classList.add('stress');
-    else if (PS[k] < 35) fill.classList.add('warn');
-  });
-}
-
-// AHORA SUMA LOS PUNTAJES (Máximo 500)
-function updateGlobalScoreDisplay() {
-  globalScore = MODULE_SCORES.reduce((a, b) => a + b, 0);
-  const el = document.getElementById('globalScore');
-  if (el) el.textContent = globalScore;
-}
-
-function showToast(type, msg) {
-  const stack = document.getElementById('toastStack');
-  const d = document.createElement('div');
-  d.className = `toast ${type}`;
-  d.innerHTML = msg;
-  stack.appendChild(d);
-  setTimeout(()=>{ d.style.opacity='0'; setTimeout(()=>d.remove(),400); }, 3500);
-}
-
-function showEdu(msg) {
-  const bar = document.getElementById('eduBar');
-  const inner = document.getElementById('eduBarInner');
-  inner.innerHTML = msg;
-  bar.classList.add('show');
-  setTimeout(()=>bar.classList.remove('show'), 6000);
-}
-
-let decisionResolve = null;
-function showDecision({stamp='DECISIÓN', scene='', title, text, context='', options}) {
-  return new Promise(resolve => {
-    decisionResolve = resolve;
-    document.getElementById('dStamp').textContent = stamp;
-    document.getElementById('dScene').innerHTML = scene;
-    document.getElementById('dTitle').textContent = title;
-    document.getElementById('dText').textContent  = text;
-    
-    const ctx = document.getElementById('dContext');
-    if (context) { ctx.innerHTML = `<strong>Contexto:</strong> ${context}`; ctx.style.display='block'; }
-    else ctx.style.display='none';
-
-    const optEl = document.getElementById('dOptions');
-    optEl.innerHTML = '';
-    options.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.className = 'dc-option';
-      btn.innerHTML = `<span class="opt-txt">${opt.text}</span>`;
-      btn.onclick = () => {
-        document.getElementById('decisionModal').style.display = 'none';
-        if (opt.effects) {
-          Object.entries(opt.effects).forEach(([k,v]) => { if(k !== 'score') modStat(k, v); });
-        }
-        if (opt.edu) showEdu(`<strong>💡 Fundamento:</strong> ${opt.edu}`);
-        if (decisionResolve) { decisionResolve(opt); decisionResolve=null; }
-      };
-      optEl.appendChild(btn);
-    });
-    document.getElementById('decisionModal').style.display = 'flex';
-  });
-}
-
-function buildNav() {
-  const inner = document.getElementById('modNavInner');
-  if (!inner) return;
-  inner.innerHTML = MODULES.map((m,i) => `
-    <div class="mod-tab ${i===currentMod?'active':''} ${completed.has(i)?'done':''}" style="--c:${m.colorHex}" onclick="switchMod(${i})">
-      <div class="mod-tab-icon">${m.icon}</div><span>${m.name}</span>
-    </div>`).join('');
-
-  const track = document.getElementById('progressTrack');
-  if (!track) return;
-  let html = '';
-  MODULES.forEach((m,i) => {
-    html += `<div class="pt-step ${i===currentMod?'active':''} ${completed.has(i)?'done':''}" style="--c:${m.colorHex}">
-      <div class="pt-step-dot">${completed.has(i) ? '✓' : m.icon}</div></div>`;
-    if (i < MODULES.length-1) html += `<div class="pt-connector ${completed.has(i)?'done':''}"></div>`;
-  });
-  track.innerHTML = html;
-}
-
-function switchMod(idx) {
-  currentMod = idx;
-  buildNav();
-  buildModule(idx);
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function buildModule(idx) {
-  const m = MODULES[idx];
-  const mc = document.getElementById('mainContent');
-  mc.style.setProperty('--c', m.colorHex);
-  
-  let actionButton = '';
-  if (idx === 2) {
-    actionButton = `<button class="btn-primary" onclick="startCalculator(${idx})" style="--c:${m.colorHex}" id="btnStart_${idx}">▶ Iniciar Simulación Financiera</button>`;
-  } else {
-    const funcName = idx === 4 ? 'startScenario5' : 'startScenario';
-    actionButton = `<button class="btn-primary" onclick="${funcName}(${idx})" style="--c:${m.colorHex}" id="btnStart_${idx}">▶ Iniciar Simulación</button>`;
-  }
-
-  mc.innerHTML = `
-    <div class="mod-hero">
-      <div>
-        <div class="mod-badge" style="--c:${m.colorHex}"><div class="mod-badge-dot" style="background:${m.colorHex}"></div>Módulo ${idx+1} de ${MODULES.length}</div>
-        <h1>${m.headline}</h1>
-        <p class="mod-hero-desc">${m.subtext}</p>
-        <div class="mod-hero-actions">${actionButton}</div>
-      </div>
-      <div class="mod-stat-panel">
-        <div class="msp-header"><div class="msp-dot" style="background:${m.colorHex}"></div>Datos de Impacto</div>
-        ${m.stats.map(s=>`<div class="msp-row"><span class="msp-label">${s.label}</span><span class="msp-val ${s.cls||'neu'}">${s.val}</span></div>`).join('')}
-      </div>
-    </div>
-    <div class="section-label">Conceptos clave</div>
-    <div class="facts-grid" style="--c:${m.colorHex}">
-      ${m.facts.map(f=>`<div class="fact-card" style="--c:${m.colorHex}"><div class="fact-icon" style="font-size:24px">${f.icon}</div><h4>${f.title}</h4><p>${f.body}</p></div>`).join('')}
-    </div>
-    <div class="done-banner" id="doneBanner_${idx}">
-      <div class="done-check">✓</div>
-      <div class="done-text"><h3>¡Módulo superado! +${MODULE_SCORES[idx]} pts</h3><p>Tus indicadores han sido actualizados.</p></div>
-    </div>`;
-}
-
-async function startScenario(idx) {
-  document.getElementById(`btnStart_${idx}`).style.display = 'none';
-  let score = 0;
-
-  if (idx === 0) {
-    const d1 = await showDecision({
-      stamp:'18:00 — FIN DE JORNADA', scene:'⏰', title:'Devolución de herramienta', text:'Terminaste tu turno. Usaste un taladro percutora. Estás cansado y el almacén está cerrado.', context:'El activo debe ser devuelto hoy según el formato.',
-      options:[
-        {text:'Lo dejo en el maletero de mi carro y lo devuelvo mañana', effects:{trazabilidad:-20, costo:+15, cumplimiento:-15}, edu:'El activo queda sin custodia formal. Si se pierde o daña, la responsabilidad recae sobre ti.'},
-        {text:'Lo dejo en el suelo del taller junto a otros equipos', effects:{trazabilidad:-10, costo:+10, cumplimiento:-10}, edu:'Genera desorden y riesgo de pérdida. Además, no queda registro de quién lo dejó.'},
-        {text:'Me quedo 10 min, lo limpio y lo dejo registrado en el almacén', effects:{trazabilidad:+20, disponibilidad:+15, cumplimiento:+20, costo:-10}, edu:'¡Correcto! El registro y la inspección aseguran que el activo esté disponible mañana.'}
-      ]
-    });
-    if (d1.text.includes('Me quedo')) score += 50;
-    const d2 = await showDecision({
-      stamp:'08:00 — DÍA SIGUIENTE', scene:'📋', title:'Recepción en almacén', text:'El encargado recibe el equipo. No hay acta de entrega previa y el taladro tiene un rayón nuevo.',
-      options:[
-        {text:'No reporto el rayón porque no fue mi culpa', effects:{trazabilidad:-15, costo:+20, cumplimiento:-20}, edu:'Ocultar una novedad impide activar mantenimiento y genera costos futuros mayores.'},
-        {text:'Reporto la novedad, lleno el formato y firmo', effects:{trazabilidad:+15, disponibilidad:+10, cumplimiento:+15}, edu:'¡Correcto! El reporte transparente protege al trabajador y a la empresa.'}
-      ]
-    });
-    if (d2.text.includes('Reporto')) score += 50;
-  } 
-  else if (idx === 1) {
-    const d1 = await showDecision({
-      stamp:'CAMPO — OBRA', scene:'👷', title:'Herramienta dañada en campo', text:'Un operario reporta que el multímetro no enciende. Mañana hay una entrega clave.',
-      options:[
-        {text:'Lo envuelvo y lo dejo en el almacén sin decir nada', effects:{trazabilidad:-20, disponibilidad:-25, costo:+20}, edu:'Perderás la oportunidad de repararlo a tiempo y mañana no tendrás el equipo.'},
-        {text:'Reporto de inmediato al supervisor y solicito reemplazo', effects:{trazabilidad:+20, disponibilidad:+20, cumplimiento:+15, costo:-10}, edu:'¡Correcto! El reporte oportuno permite gestionar el reemplazo sin detener la obra.'}
-      ]
-    });
-    if (d1.text.includes('Reporto')) score += 50;
-    const d2 = await showDecision({
-      stamp:'ALMACÉN — AUDITORÍA', scene:'🔍', title:'Inspección de lote', text:'Debes revisar 10 equipos devueltos ayer. Solo tienes 15 minutos.',
-      options:[
-        {text:'Reviso solo los que se ven sucios', effects:{cumplimiento:-20, trazabilidad:-10}, edu:'La inspección debe ser sistemática. Lo limpio también puede estar dañado internamente.'},
-        {text:'Sigo la lista de chequeo y registro todo', effects:{cumplimiento:+20, trazabilidad:+15, disponibilidad:+10}, edu:'¡Correcto! La consistencia es clave para que el inventario sea confiable.'}
-      ]
-    });
-    if (d2.text.includes('lista')) score += 50;
-  } 
-  else if (idx === 3) {
-    const d1 = await showDecision({
-      stamp:'REUNIÓN DE EQUIPO', scene:'🤝', title:'El dilema del incentivo', text:'El supervisor premia al equipo con menos "incidentes" reportados. Pero sabes que hay fallas ocultas.',
-      options:[
-        {text:'Sigo la corriente para no generar conflicto', effects:{cumplimiento:-20, costo:+15}, edu:'Los incentivos mal diseñados promueven el ocultamiento de daños y pérdidas.'},
-        {text:'Propongo medir el reporte oportuno y la trazabilidad', effects:{trazabilidad:+20, cumplimiento:+20, costo:-10}, edu:'¡Excelente! Cambiar el incentivo cambia la cultura y mejora los indicadores reales.'}
-      ]
-    });
-    if (d1.text.includes('Propongo')) score += 100;
-  }
-
-  finalizarModulo(idx, score);
-}
-
-async function startScenario5(idx) {
-  document.getElementById(`btnStart_${idx}`).style.display = 'none';
-  const d1 = await showDecision({
-    stamp:'OBRA — 15:30 PM', scene:'⚡', title:'Cable de alimentación pelado', text:'Estás a punto de conectar un tablero de control. Notas que el cable de alimentación de tu herramienta tiene el aislamiento pelado y se ve cobre.', context:'Mañana hay una auditoría de seguridad y el supervisor no está.',
-    options:[
-      {text:'Lo uso con cuidado, total es solo un cable', effects:{cumplimiento:-20, costo:+20, trazabilidad:-15}, edu:'Un cable pelado puede generar un cortocircuito o una descarga eléctrica fatal. Tu vida vale más que terminar rápido.'},
-      {text:'Dejo de usarlo, lo reporto al supervisor y pido otro', effects:{trazabilidad:+20, cumplimiento:+20, costo:-10, disponibilidad:+10}, edu:'¡Correcto! Reportar un riesgo a tiempo protege tu integridad y evita accidentes graves en la obra.'}
-    ]
-  });
-  let score = d1.text.includes('Dejo') ? 100 : 0;
-  finalizarModulo(idx, score);
-}
-
-function finalizarModulo(idx, score) {
-  completed.add(idx);
-  MODULE_SCORES[idx] = score;
-  updateGlobalScoreDisplay(); // Actualiza la barra superior sumando el puntaje
-  buildNav();
-  
-  const b = document.getElementById(`doneBanner_${idx}`);
-  if (b) {
-    b.querySelector('h3').textContent = `¡Módulo superado! +${score} pts`;
-    b.classList.add('show');
-  }
-
-  if (completed.size >= MODULES.length) setTimeout(showFinalResults, 1500);
-  else setTimeout(() => switchMod(currentMod + 1), 2500);
-}
-
-async function startCalculator(idx) {
-  document.getElementById(`btnStart_${idx}`).style.display = 'none';
-  const d1 = await showDecision({
-    stamp:'ALMACÉN — 17:00 PM', scene:'💸', title:'Falta una herramienta', text:'Al hacer el inventario del día, notas que falta un taladro percutora valorado en $800.000. El operario que lo usó dice que "se lo dejó a alguien" y no sabe a quién.', context:'El proyecto avanza y el supervisor no está. Si no reportas la pérdida, el sistema lo marcará como "en uso".',
-    options:[
-      {text:'No reporto nada. Tal vez aparezca mañana y no quiero problemas.', effects:{trazabilidad:-25, costo:+20, cumplimiento:-15}, edu:'Ocultar una pérdida genera un "hueco" en el inventario. Cuando se necesite, no estará y habrá que comprar otra de urgencia.'},
-      {text:'Reporto la novedad inmediatamente al supervisor y al almacén.', effects:{trazabilidad:+20, cumplimiento:+20, costo:-5}, edu:'¡Correcto! El reporte oportuno permite rastrear el activo, buscar responsables y evitar gastos innecesarios.'}
-    ]
-  });
-
-  const esBueno = d1.text.includes('Reporto');
-  const score = esBueno ? 100 : 0;
-  const mc = document.getElementById('mainContent');
-  const valorInicial = esBueno ? 0 : 800000;
-  const horasInicial = esBueno ? 1 : 6;
-  const personasInicial = esBueno ? 1 : 4;
-
-  const calcHTML = `
-    <div style="background:#fff; border:1px solid #ddd; border-radius:16px; padding:30px; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="color:#333;">Impacto Financiero de tu Decisión</h3>
-        <span style="background:${esBueno?'#22C55E':'#E74C3C'}; color:white; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:bold;">${esBueno ? 'Decisión Correcta' : 'Decisión Incorrecta'}</span>
-      </div>
-      <p style="color:#666; margin-bottom:20px; font-size:14px;">${esBueno ? 'Como reportaste a tiempo, el costo se minimizó.' : 'Al no reportar, la herramienta se perdió. MGM tuvo que comprar una nueva y detener la obra.'}</p>
-      <div style="margin-bottom:15px;">
-        <label style="font-weight:bold; font-size:14px;">Valor del activo perdido: <span id="valActivoTxt" style="color:#104C8F;">$${valorInicial.toLocaleString('es-CO')}</span></label>
-        <input type="range" id="valActivo" min="0" max="2000000" step="50000" value="${valorInicial}" style="width:100%;" oninput="updateCalc()">
-      </div>
-      <div style="margin-bottom:15px;">
-        <label style="font-weight:bold; font-size:14px;">Horas de retraso: <span id="valHorasTxt" style="color:#104C8F;">${horasInicial} horas</span></label>
-        <input type="range" id="valHoras" min="0" max="24" step="1" value="${horasInicial}" style="width:100%;" oninput="updateCalc()">
-      </div>
-      <div style="margin-bottom:15px;">
-        <label style="font-weight:bold; font-size:14px;">Personas afectadas: <span id="valPersonasTxt" style="color:#104C8F;">${personasInicial} personas</span></label>
-        <input type="range" id="valPersonas" min="1" max="10" step="1" value="${personasInicial}" style="width:100%;" oninput="updateCalc()">
-      </div>
-      <div style="margin-top:30px; padding:20px; background:#FDF2F2; border-radius:12px; border-left:5px solid #E74C3C;">
-        <div style="font-size:14px; color:#666; margin-bottom:5px;">COSTO TOTAL PARA MGM:</div>
-        <div id="totalCosto" style="font-size:32px; font-weight:900; color:#E74C3C;">$0</div>
-      </div>
-      <button class="btn-primary" onclick="finishCalculator(${idx}, ${score})" style="margin-top:20px; width:100%; background:#EAB308;">Entendido, continuar →</button>
-    </div>
-  `;
-  mc.innerHTML = calcHTML;
-  updateCalc(); 
-}
-
-function updateCalc() {
-  const valActivo = parseInt(document.getElementById('valActivo').value);
-  const valHoras = parseInt(document.getElementById('valHoras').value);
-  const valPersonas = parseInt(document.getElementById('valPersonas').value);
-  document.getElementById('valActivoTxt').textContent = "$" + valActivo.toLocaleString('es-CO');
-  document.getElementById('valHorasTxt').textContent = valHoras + " horas";
-  document.getElementById('valPersonasTxt').textContent = valPersonas + " personas";
-  const total = valActivo + (30000 * valHoras * valPersonas) + (valActivo * 0.20);
-  document.getElementById('totalCosto').textContent = "$" + Math.round(total).toLocaleString('es-CO');
-}
-
-function finishCalculator(idx, score) {
-  completed.add(idx);
-  MODULE_SCORES[idx] = score;
-  updateGlobalScoreDisplay();
-  
-  if (score > 0) {
-    modStat('trazabilidad', 10);
-    modStat('costo', -15);
-  } else {
-    modStat('trazabilidad', -15);
-    modStat('costo', 20);
-  }
-  
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div style="text-align:center; padding: 60px 20px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 600px; margin: 0 auto;">
-      <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
-      <h2 style="color: #EAB308; margin-bottom: 10px; font-family: 'DM Sans', sans-serif;">¡Módulo Financiero completado!</h2>
-      <p style="color: #666; font-size: 16px; margin-bottom: 30px;">Has entendido el impacto real de las decisiones en la operación de MGM.</p>
-      <button onclick="avanzarModulo4()" style="background: #EAB308; color: white; border: none; padding: 15px 40px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);">
-        Continuar al Módulo 4 →
-      </button>
-    </div>
-  `;
-}
-
-function avanzarModulo4() {
-  buildNav();
-  switchMod(3);
-}
-
-function showFinalResults() {
-  document.getElementById('resultsScreen').style.display = 'flex';
-  document.getElementById('rcScoreNum').textContent = globalScore;
-  
-  let rank = "Operador en Formación";
-  if (globalScore >= 450) rank = "Guardián de Activos MGM";
-  else if (globalScore >= 350) rank = "Supervisor Comprometido";
-  else if (globalScore >= 200) rank = "Analista en Mejora";
-
-  document.getElementById('rcRank').textContent = rank;
-  document.getElementById('rcBreakdown').innerHTML = MODULES.map((m,i) => `
-    <div class="rc-mod-card">
-      <div class="rc-mod-left"><div class="rc-mod-icon" style="background:${m.colorHex}20; color:${m.colorHex}">${m.icon}</div><div class="rc-mod-name">${m.name}</div></div>
-      <div class="rc-mod-pts" style="color:${m.colorHex}">${MODULE_SCORES[i]} <span style="font-size:12px;color:#888">/100</span></div>
+// ¡ESTA ES LA FUNCIÓN QUE FALTABA Y DIBUJA LAS TARJETAS!
+function buildFrentesCards() {
+  const grid = document.getElementById('frentesGrid');
+  if (!grid) return;
+  grid.innerHTML = FRENTES.map(f => `
+    <div class="frente-card" style="--c:${f.colorHex}" onclick="entrarFrente('${f.id}')">
+      <div class="frente-icon">${f.icon}</div>
+      <div class="frente-name">${f.name}</div>
+      <div class="frente-desc">${f.short}</div>
+      <div class="frente-cta">Entrar →</div>
     </div>
   `).join('');
-
-  document.getElementById('rcRecs').innerHTML = `
-    <div class="rc-recs-title">Recomendaciones Estratégicas para MGM</div>
-    <div class="rc-rec-item"><div class="rc-rec-dot" style="background:#B5194B"></div><div>Implementar formatos digitales simples para registro de entrega/devolución.</div></div>
-    <div class="rc-rec-item"><div class="rc-rec-dot" style="background:#104C8F"></div><div>Establecer un reconocimiento mensual al equipo con mayor trazabilidad.</div></div>
-  `;
-
-  document.getElementById('rcActions').innerHTML = `
-    <button class="btn-restart" onclick="location.reload()">↺ Repetir</button>
-    <button class="btn-share" id="btnDownload" style="background:#104C8F; padding: 15px 20px;">📥 Reporte TXT</button>
-    <button class="btn-share" id="btnCertificate" style="background:#B5194B; padding: 15px 20px;">🏆 Certificado</button>
-  `;
-
-  document.getElementById('btnDownload').onclick = () => {
-    const nombre = localStorage.getItem("playerName") || "Usuario";
-    let texto = `=========================================\n   REPORTE DE SIMULACIÓN\n   MGM Ingeniería y Proyectos S.A.S.\n=========================================\n\n`;
-    texto += `Participante: ${nombre}\nFecha: ${new Date().toLocaleString()}\nPuntuación Final: ${globalScore} / 500 pts\nNivel: ${rank}\n\n`;
-    texto += `--- DESGLOSE POR MÓDULO ---\n`;
-    MODULES.forEach((m, i) => {
-      texto += `• ${m.name}: ${MODULE_SCORES[i]} / 100 pts\n`;
-    });
-    texto += `\n--- INDICADORES FINALES DE LA EMPRESA ---\n• Trazabilidad: ${Math.round(PS.trazabilidad)}%\n• Disponibilidad: ${Math.round(PS.disponibilidad)}%\n• Cumplimiento: ${Math.round(PS.cumplimiento)}%\n• Riesgo Operativo: ${Math.round(PS.costo)}%\n`;
-    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-    link.download = `Reporte_Simulacion_${nombre.replace(/ /g, "_")}.txt`; link.click();
-  };
-
-  document.getElementById('btnCertificate').onclick = () => {
-    const nombre = localStorage.getItem("playerName") || "Usuario";
-    const fecha = new Date().toLocaleDateString();
-    const certCanvas = document.createElement('canvas'); certCanvas.width = 1200; certCanvas.height = 850;
-    const c = certCanvas.getContext('2d');
-    c.fillStyle = "#FAFAFA"; c.fillRect(0, 0, 1200, 850);
-    c.strokeStyle = "#B5194B"; c.lineWidth = 15; c.strokeRect(30, 30, 1140, 790);
-    c.strokeStyle = "#104C8F"; c.lineWidth = 3; c.strokeRect(55, 55, 1090, 740);
-    c.fillStyle = "#104C8F"; c.font = "bold 28px Arial"; c.textAlign = "center"; c.fillText("MGM INGENIERÍA Y PROYECTOS S.A.S.", 600, 130);
-    c.fillStyle = "#666"; c.font = "18px Arial"; c.fillText("Gestión Humana y Calidad", 600, 165);
-    c.fillStyle = "#B5194B"; c.font = "bold 60px Georgia, serif"; c.fillText("CERTIFICADO", 600, 280);
-    c.fillStyle = "#333"; c.font = "24px Arial"; c.fillText("Se otorga el presente reconocimiento a:", 600, 340);
-    c.fillStyle = "#000"; c.font = "bold 50px Arial"; c.fillText(nombre, 600, 430);
-    c.beginPath(); c.moveTo(300, 460); c.lineTo(900, 460); c.strokeStyle = "#CCC"; c.lineWidth = 2; c.stroke();
-    c.fillStyle = "#444"; c.font = "20px Arial"; c.fillText("Por haber completado con éxito el Simulador de Cultura de Cuidado y Trazabilidad,", 600, 510);
-    c.fillText("demostrando compromiso con la gestión de activos de la compañía.", 600, 540);
-    c.fillStyle = "#B5194B"; c.font = "bold 32px Arial"; c.fillText(`Nivel: ${rank}`, 600, 620);
-    c.fillStyle = "#104C8F"; c.font = "bold 24px Arial"; c.fillText(`Puntuación: ${globalScore} / 500 pts`, 600, 660);
-    c.fillStyle = "#666"; c.font = "16px Arial"; c.fillText(`Fecha de emisión: ${fecha}`, 600, 740);
-    c.fillStyle = "#333"; c.font = "bold 18px Arial"; c.fillText("Dirección de Gestión Humana", 600, 780);
-    const link = document.createElement("a"); link.download = `Certificado_MGM_${nombre.replace(/ /g, "_")}.png`; link.href = certCanvas.toDataURL("image/png"); link.click();
-    showToast("good", "🏆 ¡Certificado descargado con éxito!");
-  };
 }
 
-// ── INICIALIZACIÓN DE LA APP ──
-document.getElementById('btnLaunch').onclick = () => {
-  const name = document.getElementById('playerName').value.trim();
-  if (name) localStorage.setItem("playerName", name);
-  
-  localStorage.removeItem('mgm_completed_mods');
-  localStorage.removeItem('mgm_scores');
-  localStorage.removeItem('mgm_global_score');
-  localStorage.removeItem('mgm_vitals');
+function entrarFrente(id) {
+  const frente = FRENTES.find(f => f.id === id);
+  if (!frente) return;
 
   document.getElementById('introScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'flex';
-  renderVitals();
-  switchMod(0);
-};
 
+  const nav = document.getElementById('modNav');
+
+  if (id === 'operativo') {
+    nav.style.display = 'block'; 
+    buildNavOperativo();
+    switchModOperativo('teoria'); 
+  } else {
+    nav.style.display = 'block'; 
+    mostrarFrenteDiagnosticoSimple(frente);
+  }
+}
+
+function mostrarFrenteDiagnosticoSimple(frente) {
+  const mc = document.getElementById('mainContent');
+  mc.style.setProperty('--c', frente.colorHex);
+
+  document.getElementById('modNavInner').innerHTML = `
+    <div style="display:flex; align-items:center; gap:16px; width:100%;">
+      <button onclick="volverAlInicio()" style="background:transparent; border:none; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; padding:10px 0;">
+        ← Volver a Frentes
+      </button>
+      <div class="mod-tab active" style="--c:${frente.colorHex}; margin-left:auto; border:none; padding:10px 16px;">
+        <div class="mod-tab-icon" style="background:transparent;">${frente.icon}</div><span>${frente.name}</span>
+      </div>
+    </div>`;
+
+  const bloquesHTML = frente.diagnostico.bloques.map(b => `
+    <div class="diagnostico-block">
+      <h4>${b.titulo}</h4>
+      ${b.parrafos ? b.parrafos.map(p => `<p>${p}</p>`).join('') : ''}
+      ${b.lista ? `<ul>${b.lista.map(li => `<li>${li}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  mc.innerHTML = `
+    <div class="frente-hero" style="--c:${frente.colorHex}">
+      <div class="frente-hero-tag">Frente ${frente.name}</div>
+      <h1>${frente.diagnostico.titulo}</h1>
+      ${bloquesHTML}
+      <div style="margin-top:20px;">
+        <button onclick="volverAlInicio()" style="background:transparent; border:1.5px solid var(--border2); color:var(--text2); padding:13px 24px; border-radius:var(--r); font-weight:700; font-size:14px; cursor:pointer;">← Volver a Frentes</button>
+      </div>
+    </div>
+  `;
+}
+
+function volverAlInicio() {
+  document.getElementById('introScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  buildFrentesCards();
+}
+
+// ── NAVEGACIÓN INTERNA OPERATIVO ──
+function buildNavOperativo() {
+  const inner = document.getElementById('modNavInner');
+  if (!inner) return;
+  
+  let tabsHTML = `
+    <div class="mod-tab active" id="tab-teoria" style="--c:#B5194B" onclick="switchModOperativo('teoria')">
+      <div class="mod-tab-icon">📖</div><span>1. Teoría / Abastecimiento</span>
+    </div>
+    <div class="mod-tab" id="tab-documental" style="--c:#036B4C" onclick="switchModOperativo('documental')">
+      <div class="mod-tab-icon">📁</div><span>2. Gestión Documental</span>
+    </div>
+    <div class="mod-tab" id="tab-talento" style="--c:#104C8F" onclick="switchModOperativo('talento')">
+      <div class="mod-tab-icon">👥</div><span>3. Plan Talento Humano</span>
+    </div>
+  `;
+
+  inner.innerHTML = `
+    <div style="display:flex; align-items:center; width:100%; overflow-x:auto;">
+      <button onclick="volverAlInicio()" style="background:transparent; border:none; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; padding:12px 16px; white-space:nowrap; border-right:1px solid var(--border2); margin-right:8px;">
+        ← Volver a Frentes
+      </button>
+      <div style="display:flex; gap:4px;">${tabsHTML}</div>
+    </div>
+  `;
+}
+
+function switchModOperativo(vista) {
+  document.getElementById('tab-teoria').classList.remove('active');
+  document.getElementById('tab-documental').classList.remove('active');
+  document.getElementById('tab-talento').classList.remove('active');
+  
+  if (vista === 'teoria') {
+    document.getElementById('tab-teoria').classList.add('active');
+    mostrarTeoriaOperativo();
+  } else if (vista === 'documental') {
+    document.getElementById('tab-documental').classList.add('active');
+    mostrarGestionDocumental();
+  } else {
+    document.getElementById('tab-talento').classList.add('active');
+    mostrarTalentoHumano();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+
+function mostrarTeoriaOperativo() {
+  const mc = document.getElementById('mainContent');
+  const frente = FRENTES.find(f => f.id === 'operativo');
+  mc.style.setProperty('--c', frente.colorHex);
+
+  const bloquesHTML = frente.diagnostico.bloques.map(b => `
+    <div class="diagnostico-block">
+      <h4>${b.titulo}</h4>
+      ${b.parrafos ? b.parrafos.map(p => `<p>${p}</p>`).join('') : ''}
+      ${b.lista ? `<ul>${b.lista.map(li => `<li>${li}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  mc.innerHTML = `
+    <div class="frente-hero" style="--c:${frente.colorHex}">
+      <div class="frente-hero-tag">Frente Operativo</div>
+      <h1>${frente.diagnostico.titulo}</h1>
+      ${bloquesHTML}
+      <div style="margin-top:24px;">
+        <button class="btn-primary" onclick="switchModOperativo('talento')" style="--c:${frente.colorHex}">Ir a Plan Talento Humano →</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── NUEVA PESTAÑA: GESTIÓN DOCUMENTAL ──
+function mostrarGestionDocumental() {
+  const mc = document.getElementById('mainContent');
+  mc.style.setProperty('--c', '#036B4C');
+
+  mc.innerHTML = `
+    <div class="frente-hero" style="--c:#036B4C">
+      <div class="frente-hero-tag">Frente Operativo</div>
+      <h1>Gestión Documental de Proveedores</h1>
+      
+      <div class="diagnostico-block">
+        <h4>Propuesta de Estandarización</h4>
+        <p>Se recomienda implementar un procedimiento estandarizado que permita establecer mecanismos sistemáticos para la solicitud, recepción, verificación, registro, seguimiento y conservación de los documentos requeridos para los materiales, equipos y servicios adquiridos por MGM.</p>
+        <p>La propuesta contempla la definición de requisitos por tipo de suministro, asignación de responsabilidades (Compras y Almacén) e incorporación de controles en las etapas de adquisición y recepción.</p>
+      </div>
+
+      <div class="diagnostico-block">
+        <h4>Mecanismos Preventivos</h4>
+        <p>Se recomienda incorporar la verificación de requisitos en la evaluación de proveedores, así como establecer la solicitud anticipada de certificados de conformidad y fichas técnicas desde la emisión de órdenes de compra.</p>
+        <p>Para los casos de documentación pendiente, se establecerán mecanismos de seguimiento y escalamiento para evitar la pérdida de trazabilidad. Finalmente, se fortalecerá la cultura de cumplimiento mediante socialización, capacitación y seguimiento de indicadores.</p>
+      </div>
+
+      <div class="section-label" style="margin-top:40px; --c:#036B4C">Caja de Herramientas Propuestas</div>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+        
+        <!-- Herramienta 1 -->
+        <div class="herramienta-card" style="--c:#036B4C">
+          <div class="herramienta-info">
+            <div class="herramienta-icon-box">📋</div>
+            <div class="herramienta-text">
+              <h4>Matriz de Requisitos Documentales</h4>
+              <p>Identifica qué documentos exige cada tipo de suministro.</p>
+            </div>
+          </div>
+          <button onclick="descargarMatrizRequisitos()" class="btn-premium">📥 Descargar Excel</button>
+        </div>
+
+        <!-- Herramienta 2 -->
+        <div class="herramienta-card" style="--c:#036B4C">
+          <div class="herramienta-info">
+            <div class="herramienta-icon-box">✅</div>
+            <div class="herramienta-text">
+              <h4>Lista de Verificación Documental</h4>
+              <p>Comprueba el cumplimiento de requisitos al recibir materiales.</p>
+            </div>
+          </div>
+          <button onclick="descargarListaVerificacion()" class="btn-premium">📥 Descargar Formato</button>
+        </div>
+
+        <!-- Herramienta 3 -->
+        <div class="herramienta-card" style="--c:#036B4C">
+          <div class="herramienta-info">
+            <div class="herramienta-icon-box">🗂️</div>
+            <div class="herramienta-text">
+              <h4>Registro de Proveedores y Documentos</h4>
+              <p>Centraliza la información y consulta documentos pendientes.</p>
+            </div>
+          </div>
+          <button onclick="descargarRegistroProveedores()" class="btn-premium">📥 Descargar Excel</button>
+        </div>
+
+        <!-- Herramienta 4 -->
+        <div class="herramienta-card" style="--c:#036B4C">
+          <div class="herramienta-info">
+            <div class="herramienta-icon-box">📈</div>
+            <div class="herramienta-text">
+              <h4>Indicador de Cumplimiento Documental</h4>
+              <p>Mide la proporción de suministros con documentación completa.</p>
+            </div>
+          </div>
+          <button onclick="descargarIndicadorCumplimiento()" class="btn-premium">📥 Descargar Excel</button>
+        </div>
+
+      </div>
+
+      <div style="margin-top:40px;">
+        <button onclick="switchModOperativo('talento')" class="btn-primary" style="--c:#036B4C">Ir a Plan de Talento Humano →</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── FUNCIONES DE DESCARGA (GESTIÓN DOCUMENTAL) ──
+
+function descargarMatrizRequisitos() {
+  const datos = [
+    ["Tipo de Suministro", "Documento Requerido", "Obligatorio (Si/No)", "Área que verifica"],
+    ["Equipos eléctricos", "Certificado de conformidad de producto", "Si", "Compras / Almacén"],
+    ["Equipos eléctricos", "Ficha técnica", "Si", "Almacén"],
+    ["Materiales de construcción", "Ficha técnica", "Si", "Almacén"],
+    ["Herramientas manuales", "Manual de usuario", "No", "Almacén"],
+    ["Servicios", "Acta de recibo a satisfacción", "Si", "Compras"]
+  ];
+  generarExcelProfesional(datos, "Matriz_Requisitos_Documentales.xlsx", "Matriz Requisitos", "#036B4C");
+  mostrarToastExito("Matriz de Requisitos (.xlsx) descargada");
+}
+
+function descargarRegistroProveedores() {
+  const datos = [
+    ["NIT Proveedor", "Nombre Proveedor", "Documento Pendiente", "Fecha Solicitud", "Fecha Límite", "Estado", "Responsable"],
+    ["900.123.456-1", "Suministros Eléctricos S.A.", "Certificado de conformidad", "2026-11-01", "2026-11-15", "Pendiente", "Compras"],
+    ["800.987.654-2", "Ferretería Central", "Ficha técnica", "2026-11-05", "2026-11-10", "Completado", "Almacén"]
+  ];
+  generarExcelProfesional(datos, "Registro_Proveedores_Documentos.xlsx", "Registro Proveedores", "#036B4C");
+  mostrarToastExito("Registro de Proveedores (.xlsx) descargado");
+}
+
+function descargarIndicadorCumplimiento() {
+  const datos = [
+    ["Mes", "Total Suministros", "Doc. Completa", "Doc. Pendiente", "% Cumplimiento"],
+    ["Enero", 0, 0, 0, "0%"],
+    ["Febrero", 0, 0, 0, "0%"],
+    ["Marzo", 0, 0, 0, "0%"],
+    ["Abril", 0, 0, 0, "0%"],
+    ["Mayo", 0, 0, 0, "0%"],
+    ["Junio", 0, 0, 0, "0%"],
+    ["Julio", 0, 0, 0, "0%"],
+    ["Agosto", 0, 0, 0, "0%"],
+    ["Septiembre", 0, 0, 0, "0%"],
+    ["Octubre", 0, 0, 0, "0%"],
+    ["Noviembre", 0, 0, 0, "0%"],
+    ["Diciembre", 0, 0, 0, "0%"]
+  ];
+  generarExcelProfesional(datos, "Indicador_Cumplimiento_Documental.xlsx", "Indicador", "#036B4C");
+  mostrarToastExito("Indicador de Cumplimiento (.xlsx) descargado");
+}
+
+// Fábrica de Excel con Estilos (Colores, Bordes, Negritas)
+function generarExcelProfesional(datos, nombreArchivo, nombreHoja, colorHex) {
+  const ws = XLSX.utils.aoa_to_sheet(datos);
+  
+  // Ancho de columnas automático (un poco más ancho para que respire)
+  const wscols = datos[0].map(() => ({ wch: 25 }));
+  ws['!cols'] = wscols;
+
+  // Aplicar estilos a la primera fila (Encabezados)
+  const rango = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = rango.s.c; C <= rango.e.c; ++C) {
+    const direccion = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[direccion]) continue;
+    
+    // Color de fondo (quitando el # del hex), texto blanco, negrita
+    ws[direccion].s = {
+      fill: { fgColor: { rgb: colorHex.replace('#', 'FF') } }, // Ej: FF036B4C
+      font: { color: { rgb: "FFFFFFFF" }, bold: true, sz: 12 },
+      alignment: { vertical: "center", horizontal: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "FFFFFFFF" } },
+        bottom: { style: "thin", color: { rgb: "FFFFFFFF" } }
+      }
+    };
+  }
+
+  // Crear libro y exportar
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+  
+  // Escribir el archivo
+  XLSX.writeFile(wb, nombreArchivo, { cellStyles: true });
+}
+
+function descargarListaVerificacion() {
+  let texto = `==================================================\n`;
+  texto += `   LISTA DE VERIFICACIÓN DOCUMENTAL EN RECEPCIÓN\n`;
+  texto += `==================================================\n\n`;
+  texto += `Proveedor: ________________________________________\n`;
+  texto += `Orden de Compra No: _______________________________\n`;
+  texto += `Fecha de Recepción: _______________________________\n\n`;
+  texto += `INSTRUCCIONES: Marque [X] si el documento fue entregado.\n\n`;
+  texto += `[ ] Certificado de conformidad de producto.\n`;
+  texto += `[ ] Ficha técnica del material o equipo.\n`;
+  texto += `[ ] Manual de usuario o guía rápida.\n`;
+  texto += `[ ] Acta de entrega firmada por el proveedor.\n`;
+  texto += `[ ] Certificado de garantía (si aplica).\n\n`;
+  texto += `Resultado: \n`;
+  texto += `[ ] RECIBIDO A SATISFACCIÓN (Documentación completa)\n`;
+  texto += `[ ] RECIBIDO CON OBSERVACIONES (Documentación pendiente)\n\n`;
+  texto += `Firma Almacenista: _________________________________\n`;
+  descargarArchivo(texto, "Lista_Verificacion_Documental.txt", "text/plain");
+  mostrarToastExito("Lista de Verificación descargada");
+}
+
+
+
+
+// ── RUTA DE IMPLEMENTACIÓN (TIMELINE) ──
+function mostrarTalentoHumano() {
+  const mc = document.getElementById('mainContent');
+  mc.style.setProperty('--c', '#104C8F');
+
+  const fases = [
+    {
+      num: 1, titulo: "Diagnóstico", semanas: "Semanas 1–2",
+      actividades: "Entrevistas breves; revisión de registros; encuesta de barreras; observación de entrega/devolución; línea base.",
+      responsables: "Gestión Humana, almacén, líderes de proyecto.",
+      entregables: "Diagnóstico de factores humanos; línea base.",
+      detalle: {
+        herramientas: ["Formato de encuesta de barreras (Google Forms)", "Lista de chequeo de observación en campo", "Plantilla de Excel para Línea Base"],
+        kpis: ["% de participación en encuestas", "Cantidad de pérdidas/día registradas (Línea base)"],
+        consejo: "No busques culpar a nadie en esta fase. El objetivo es obtener la 'foto' real de cómo está MGM hoy. Entrevista a los operarios en su entorno (obra) y no en oficinas."
+      }
+    },
+    {
+      num: 2, titulo: "Roles y responsabilidades", semanas: "Semanas 3–4",
+      actividades: "Revisar perfiles; definir responsabilidades por etapa; acordar compromisos de custodia; incorporar control en inducción.",
+      responsables: "Gestión Humana, dirección, almacén, calidad.",
+      entregables: "Matriz de responsabilidades; compromisos; ajustes a inducción.",
+      detalle: {
+        herramientas: ["Matriz RACI (Responsable, Aprobador, Consultado, Informado)", "Acta de compromiso de custodia de activos"],
+        kpis: ["% de cargos con matriz de responsabilidad clara", "% de nuevos ingresos con inducción actualizada"],
+        consejo: "Asegúrate de que cada activo tenga UN solo dueño. Si una herramienta tiene tres responsables, en la práctica no tiene ninguno."
+      }
+    },
+    {
+      num: 3, titulo: "Comunicación y movilización", semanas: "Semanas 5–6",
+      actividades: "Lanzar mensaje de cambio; charlas cortas; comunicar impactos; recoger inquietudes; participación de líderes.",
+      responsables: "Gestión Humana y líderes de proyecto.",
+      entregables: "Plan de comunicación; materiales; registro de participación.",
+      detalle: {
+        herramientas: ["Afiches en almacén y obra", "Guion para microcharlas de 5 minutos", "Buzón de inquietudes (físico o digital)"],
+        kpis: ["% de asistencia a las charlas", "Número de inquietudes recibidas y resueltas"],
+        consejo: "Enfócate en el modelo ADKAR: primero genera 'Conciencia' (mostrar cuánto cuesta una pérdida) y luego 'Deseo' (involucrar a los operarios en proponer soluciones)."
+      }
+    },
+    {
+      num: 4, titulo: "Formación y competencias", semanas: "Semanas 7–8",
+      actividades: "Capacitación práctica sobre recepción, uso, inspección, reporte, traslado y devolución; evaluación.",
+      responsables: "Gestión Humana, almacén y supervisores.",
+      entregables: "Plan de capacitación; matriz de competencias.",
+      detalle: {
+        herramientas: ["Simulador web interactivo (el que estamos diseñando)", "Listas de chequeo de inspección", "Formato de evaluación de competencias"],
+        kpis: ["% de personas capacitadas", "% de aprobación de la evaluación", "Nivel de conocimiento demostrado"],
+        consejo: "La asistencia no es igual a competencia. Usa el simulador para que tomen decisiones reales en un entorno seguro antes de ir a la obra."
+      }
+    },
+    {
+      num: 5, titulo: "Piloto", semanas: "Semanas 9–12",
+      actividades: "Seleccionar proyecto; socializar reglas; aplicar rutinas de control; registrar incidencias y retroalimentación.",
+      responsables: "Responsable del proyecto piloto, almacén, Gestión Humana.",
+      entregables: "Informe del piloto; incidencias; ajustes.",
+      detalle: {
+        herramientas: ["Códigos QR en las herramientas", "App móvil para reporte de novedades", "Panel de control del piloto"],
+        kpis: ["Tasa de pérdida", "Tiempo de devolución", "% de reportes de novedad oportunos", "Tasa de daño"],
+        consejo: "No elijas un proyecto perfecto para el piloto. Elige uno con retos reales (mucha rotación, herramientas pesadas). Ahí es donde verás si el proceso funciona."
+      }
+    },
+    {
+      num: 6, titulo: "Evaluación y refuerzo", semanas: "Semanas 13–16",
+      actividades: "Comparar línea base y resultados; auditar muestra; reconocer buenas prácticas; definir continuidad.",
+      responsables: "Dirección, Gestión Humana, proyectos.",
+      entregables: "Informe de evaluación; plan de sostenimiento.",
+      detalle: {
+        herramientas: ["Dashboard comparativo (Antes vs Después)", "Acta de cierre de proyecto con conciliación de activos", "Programa de incentivos"],
+        kpis: ["Reducción de pérdidas (vs Línea Base)", "% de devoluciones a tiempo", "Índice de satisfacción del usuario"],
+        consejo: "Celebra los logros públicamente. Si el equipo sintió que su esfuerzo sirvió para mejorar, la cultura de cuidado se mantendrá sin necesidad de vigilarlos."
+      }
+    }
+  ];
+
+  const timelineHTML = fases.map(f => `
+    <div class="timeline-item">
+      <div class="timeline-dot">${f.num}</div>
+      <div class="timeline-card">
+        <div class="timeline-header">
+          <div class="timeline-title">${f.titulo}</div>
+          <div class="timeline-weeks">${f.semanas}</div>
+        </div>
+        <div class="timeline-section">
+          <strong>Actividades:</strong> ${f.actividades}
+        </div>
+        <div class="timeline-section">
+          <strong>Responsables:</strong> ${f.responsables}
+        </div>
+        <div class="timeline-meta">
+          <span>📦 <strong>Entregables:</strong> ${f.entregables}</span>
+        </div>
+        <button class="btn-timeline" onclick="abrirDetalleFase(${f.num - 1})">
+          <span>🔍 Ver detalles de la fase</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  mc.innerHTML = `
+    <div class="frente-hero" style="--c:#104C8F; padding-bottom: 10px;">
+      <div class="frente-hero-tag">Plan de Intervención</div>
+      <h1>Ruta de Implementación: Talento Humano</h1>
+      <p class="mod-hero-desc" style="margin-bottom: 30px;">Cronograma de referencia de 16 semanas para el fortalecimiento de la cultura de cuidado y control de activos en MGM, basado en el modelo ADKAR.</p>
+      
+      <div class="timeline">
+        ${timelineHTML}
+      </div>
+
+      <div style="margin-top:40px; display:flex; justify-content:center;">
+        <button onclick="switchModOperativo('teoria')" style="background:transparent; border:1.5px solid var(--border2); color:var(--text2); padding:13px 24px; border-radius:var(--r); font-weight:700; font-size:14px; cursor:pointer;">← Volver a Teoría Operativa</button>
+      </div>
+    </div>
+  `;
+
+  window.fasesData = fases;
+}
+
+// ── MODAL DE DETALLES DEL TIMELINE ──
+function abrirDetalleFase(index) {
+  const fase = window.fasesData[index];
+  if (!fase) return;
+
+  const modalContent = document.getElementById('timelineModalContent');
+  
+  const herramientasHTML = fase.detalle.herramientas.map(h => `<li>${h}</li>`).join('');
+  const kpisHTML = fase.detalle.kpis.map(k => `<li>${k}</li>`).join('');
+
+  // Lógica especial para los botones de descarga de la Fase 1
+    let botonesDescargaHTML = '';
+  if (fase.num === 1) {
+    botonesDescargaHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px; margin-bottom:20px;">
+        <button onclick="descargarEncuestaBarreras()" style="background:#104C8F; color:white; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+          📥 Descargar Preguntas Encuesta (TXT)
+        </button>
+        <button onclick="descargarListaChequeo()" style="background:#104C8F; color:white; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+          📋 Descargar Lista de Chequeo (TXT)
+        </button>
+      </div>
+    `;
+  }
+  modalContent.innerHTML = `
+    <div class="modal-title">${fase.titulo}</div>
+    <div class="modal-subtitle">Fase ${fase.num} · ${fase.semanas}</div>
+    
+    <div class="modal-body">
+      <h4>🎯 ¿Qué se hace en esta fase?</h4>
+      <p>${fase.actividades}</p>
+
+      <h4>🛠️ Herramientas sugeridas</h4>
+      <ul>${herramientasHTML}</ul>
+      
+      ${botonesDescargaHTML} <!-- Aquí inyectamos los botones de descarga -->
+
+      <h4>📊 Indicadores (KPIs) a medir</h4>
+      <ul>${kpisHTML}</ul>
+
+      <h4>💡 Consejo Práctico</h4>
+      <p style="background: var(--surface2); padding: 12px; border-radius: 8px; border-left: 3px solid var(--c);"><em>${fase.detalle.consejo}</em></p>
+    </div>
+    
+    <button class="modal-close" onclick="cerrarDetalleFase()">Cerrar ventana</button>
+  `;
+
+  document.getElementById('timelineModal').classList.add('active');
+}
+// ── FUNCIONES DE DESCARGA (FASE 1) ──
+
+function descargarEncuestaBarreras() {
+  let texto = `==================================================\n`;
+  texto += `   ENCUESTA DE BARRERAS - GESTIÓN DE ACTIVOS MGM\n`;
+  texto += `==================================================\n\n`;
+  texto += `Instrucciones: Copia estas preguntas en Google Forms.\n\n`;
+  texto += `1. ¿Cuál es el mayor problema que enfrentas al devolver una herramienta al final de tu turno?\n`;
+  texto += `   a) El almacén está muy lejos\n`;
+  texto += `   b) El proceso de registro es muy demorado\n`;
+  texto += `   c) El almacén ya está cerrado\n`;
+  texto += `   d) No sé a quién entregárselo\n\n`;
+  texto += `2. ¿Qué haces cuando una herramienta se daña durante su uso?\n`;
+  texto += `   a) La reporto de inmediato a mi supervisor\n`;
+  texto += `   b) La dejo en el almacén sin decir nada\n`;
+  texto += `   c) Intento repararla yo mismo\n`;
+  texto += `   d) Sigo usándola hasta que termine el turno\n\n`;
+  texto += `3. ¿Sabes con claridad a quién debes reportarle una novedad?\n`;
+  texto += `   a) Sí, siempre\n`;
+  texto += `   b) A veces, depende de la obra\n`;
+  texto += `   c) No lo tengo claro\n\n`;
+  texto += `4. Del 1 al 5, ¿qué tan fácil es llenar el formato de entrega actual?\n`;
+  texto += `   (1 = Muy difícil, 5 = Muy fácil)\n\n`;
+  texto += `5. ¿Qué propones para que no se sigan perdiendo las herramientas en obra?\n`;
+  texto += `   [Pregunta abierta]\n`;
+
+  descargarArchivo(texto, "Encuesta_Barreras_MGM.txt", "text/plain");
+  mostrarToastExito("Encuesta descargada");
+}
+
+function descargarListaChequeo() {
+  let texto = `==================================================\n`;
+  texto += `   LISTA DE CHEQUEO - OBSERVACIÓN EN CAMPO\n`;
+  texto += `   Fase 1: Diagnóstico de Gestión de Activos\n`;
+  texto += `==================================================\n\n`;
+  texto += `Obra / Proyecto: ______________________________\n`;
+  texto += `Fecha de observación: _________________________\n`;
+  texto += `Observador: ___________________________________\n\n`;
+  texto += `INSTRUCCIONES: Marque [X] si el comportamiento se cumple.\n\n`;
+  texto += `--- MOMENTO DE ENTREGA ---\n`;
+  texto += `[ ] El operario firma el formato de entrega.\n`;
+  texto += `[ ] El almacenista verifica el estado del equipo antes de entregarlo.\n`;
+  texto += `[ ] Se registra claramente el nombre de quien recibe.\n`;
+  texto += `[ ] El operario inspecciona la herramienta antes de salir del almacén.\n\n`;
+  texto += `--- USO EN CAMPO ---\n`;
+  texto += `[ ] La herramienta se mantiene en el lugar asignado.\n`;
+  texto += `[ ] Se evitan transferencias informales (pasar la herramienta a otro compañero).\n`;
+  texto += `[ ] El operario usa los EPP adecuados para la herramienta.\n\n`;
+  texto += `--- MOMENTO DE DEVOLUCIÓN ---\n`;
+  texto += `[ ] El equipo se entrega limpio.\n`;
+  texto += `[ ] El almacenista revisa el estado y firma la devolución.\n`;
+  texto += `[ ] Si hay daño, se reporta inmediatamente en el formato.\n\n`;
+  texto += `Observaciones adicionales:\n`;
+  texto += `__________________________________________________\n`;
+  texto += `__________________________________________________\n`;
+
+  descargarArchivo(texto, "Lista_Chequeo_Campo_MGM.txt", "text/plain");
+  mostrarToastExito("Lista de chequeo descargada");
+}
+
+function descargarPlantillaExcel() {
+  const datos = [
+    ["Mes", "Pérdidas de Herramientas ($)", "Herramientas Dañadas", "Devoluciones Tarde", "Total Equipos en Obra", "Porcentaje de Trazabilidad"],
+    ["Enero", 0, 0, 0, 0, "0%"],
+    ["Febrero", 0, 0, 0, 0, "0%"],
+    ["Marzo", 0, 0, 0, 0, "0%"],
+    ["Abril", 0, 0, 0, 0, "0%"],
+    ["Mayo", 0, 0, 0, 0, "0%"],
+    ["Junio", 0, 0, 0, 0, "0%"],
+    ["Julio", 0, 0, 0, 0, "0%"],
+    ["Agosto", 0, 0, 0, 0, "0%"],
+    ["Septiembre", 0, 0, 0, 0, "0%"],
+    ["Octubre", 0, 0, 0, 0, "0%"],
+    ["Noviembre", 0, 0, 0, 0, "0%"],
+    ["Diciembre", 0, 0, 0, 0, "0%"]
+  ];
+  generarExcel(datos, "Linea_Base_MGM.xlsx", "Linea Base");
+  mostrarToastExito("Plantilla Excel (.xlsx) descargada");
+}
+
+function descargarMatrizRACI() {
+  const datos = [
+    ["Etapa del Proceso", "Almacenista", "Supervisor de Obra", "Residente de Proyecto", "Trabajador / Usuario", "Gestión Humana"],
+    ["Solicitud de herramienta", "R", "A", "C", "I", "I"],
+    ["Aprobación y asignación", "A", "R", "C", "I", "I"],
+    ["Entrega de herramienta", "R", "C", "I", "I", "I"],
+    ["Uso y custodia", "I", "C", "I", "R", "I"],
+    ["Inspección antes/después", "I", "R", "C", "R", "C"],
+    ["Reporte de novedad o daño", "C", "R", "I", "R", "I"],
+    ["Traslado o reasignación", "R", "C", "A", "I", "I"],
+    ["Devolución al almacén", "R", "C", "I", "R", "I"],
+    ["Cierre de proyecto y conciliación", "C", "R", "A", "I", "C"],
+    [],
+    ["NOTA: R = Responsable, A = Aprobador, C = Consultado, I = Informado"]
+  ];
+  generarExcel(datos, "Matriz_RACI_MGM.xlsx", "Matriz RACI");
+  mostrarToastExito("Matriz RACI (.xlsx) descargada");
+}
+
+
+function descargarMatrizRequisitos() {
+  const datos = [
+    ["MATRIZ DE REQUISITOS DOCUMENTALES", "", "", ""],
+    ["MGM Ingeniería y Proyectos S.A.S. - Gestión de Proveedores", "", "", ""],
+    ["", "", "", ""],
+    ["Tipo de Suministro", "Documento Requerido", "Obligatorio", "Área que verifica"],
+    ["Equipos eléctricos", "Certificado de conformidad de producto", "Sí", "Compras / Almacén"],
+    ["Equipos eléctricos", "Ficha técnica", "Sí", "Almacén"],
+    ["Materiales de construcción", "Ficha técnica", "Sí", "Almacén"],
+    ["Herramientas manuales", "Manual de usuario", "No", "Almacén"],
+    ["Servicios", "Acta de recibo a satisfacción", "Sí", "Compras"]
+  ];
+  
+  // Configuración de columnas: { wch: ancho }
+  const cols = [{ wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 20 }];
+  
+  // Se pasa el color corporativo verde
+  generarExcelCorporativo(datos, cols, "Matriz_Requisitos_Documentales.xlsx", "Matriz Requisitos", "036B4C");
+  mostrarToastExito("Matriz de Requisitos descargada");
+}
+
+function descargarRegistroProveedores() {
+  const datos = [
+    ["REGISTRO DE PROVEEDORES Y DOCUMENTOS", "", "", "", "", "", ""],
+    ["MGM Ingeniería y Proyectos S.A.S. - Control Documental", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", ""],
+    ["NIT Proveedor", "Nombre Proveedor", "Documento Pendiente", "Fecha Solicitud", "Fecha Límite", "Estado", "Responsable"],
+    ["900.123.456-1", "Suministros Eléctricos S.A.", "Certificado de conformidad", "2026-11-01", "2026-11-15", "Pendiente", "Compras"],
+    ["800.987.654-2", "Ferretería Central", "Ficha técnica", "2026-11-05", "2026-11-10", "Completado", "Almacén"]
+  ];
+  
+  const cols = [{ wch: 18 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+  
+  generarExcelCorporativo(datos, cols, "Registro_Proveedores_Documentos.xlsx", "Registro", "036B4C");
+  mostrarToastExito("Registro de Proveedores descargado");
+}
+
+function descargarIndicadorCumplimiento() {
+  const datos = [
+    ["INDICADOR DE CUMPLIMIENTO DOCUMENTAL", "", "", "", ""],
+    ["MGM Ingeniería y Proyectos S.A.S. - Gestión de Proveedores", "", "", "", ""],
+    ["", "", "", "", ""],
+    ["Mes", "Total Suministros", "Doc. Completa", "Doc. Pendiente", "% Cumplimiento"],
+    ["Enero", 0, 0, 0, "0%"],
+    ["Febrero", 0, 0, 0, "0%"],
+    ["Marzo", 0, 0, 0, "0%"],
+    ["Abril", 0, 0, 0, "0%"],
+    ["Mayo", 0, 0, 0, "0%"],
+    ["Junio", 0, 0, 0, "0%"],
+    ["Julio", 0, 0, 0, "0%"],
+    ["Agosto", 0, 0, 0, "0%"],
+    ["Septiembre", 0, 0, 0, "0%"],
+    ["Octubre", 0, 0, 0, "0%"],
+    ["Noviembre", 0, 0, 0, "0%"],
+    ["Diciembre", 0, 0, 0, "0%"]
+  ];
+  
+  const cols = [{ wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 18 }];
+  
+  generarExcelCorporativo(datos, cols, "Indicador_Cumplimiento_Documental.xlsx", "Indicador", "036B4C");
+  mostrarToastExito("Indicador descargado");
+}
+
+
+// ── FÁBRICA DE EXCEL CORPORATIVO ──
+function generarExcelCorporativo(datos, cols, nombreArchivo, nombreHoja, colorHex) {
+  const ws = XLSX.utils.aoa_to_sheet(datos);
+  
+  // Asignar anchos de columna
+  ws['!cols'] = cols;
+
+  // Combinar celdas para el título y subtítulo
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: datos[0].length - 1 } }, // Título (Fila 0)
+    { s: { r: 1, c: 0 }, e: { r: 1, c: datos[0].length - 1 } }  // Subtítulo (Fila 1)
+  ];
+
+  const rango = XLSX.utils.decode_range(ws['!ref']);
+
+  // Recorrer todas las celdas para aplicar estilos
+  for (let R = rango.s.r; R <= rango.e.r; ++R) {
+    for (let C = rango.s.c; C <= rango.e.c; ++C) {
+      const dir = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[dir];
+      
+      if (!cell) continue; // Si la celda está vacía, saltar
+
+      // ESTILO BASE PARA TODAS LAS CELDAS
+      cell.s = {
+        font: { name: "Arial", sz: 11, color: { rgb: "333333" } },
+        alignment: { vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "D3D3D3" } },
+          bottom: { style: "thin", color: { rgb: "D3D3D3" } },
+          left: { style: "thin", color: { rgb: "D3D3D3" } },
+          right: { style: "thin", color: { rgb: "D3D3D3" } }
+        }
+      };
+
+      // Fila 0: Título Principal
+      if (R === 0) {
+        cell.s.font = { name: "Arial", sz: 16, bold: true, color: { rgb: "FFFFFF" } };
+        cell.s.fill = { fgColor: { rgb: colorHex.replace('#', 'FF') } };
+        cell.s.alignment = { vertical: "center", horizontal: "center" };
+        cell.s.border = {}; // Sin bordes para el título
+      }
+      
+      // Fila 1: Subtítulo
+      else if (R === 1) {
+        cell.s.font = { name: "Arial", sz: 11, italic: true, color: { rgb: "FFFFFF" } };
+        cell.s.fill = { fgColor: { rgb: colorHex.replace('#', 'CC') } }; // Un tono más claro
+        cell.s.alignment = { vertical: "center", horizontal: "center" };
+        cell.s.border = {};
+      }
+
+      // Fila 2: Espacio en blanco
+      else if (R === 2) {
+        cell.s.border = {};
+      }
+
+      // Fila 3: Cabeceras de la tabla
+      else if (R === 3) {
+        cell.s.font = { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } };
+        cell.s.fill = { fgColor: { rgb: "555555" } };
+        cell.s.alignment = { vertical: "center", horizontal: "center", wrapText: true };
+      }
+
+      // Filas de datos (R >= 4)
+      else {
+        // Zebra (rayas grises y blancas para leer mejor)
+        if (R % 2 === 0) {
+          cell.s.fill = { fgColor: { rgb: "F9F9F9" } };
+        }
+      }
+    }
+  }
+
+  // Ajustar altura de las filas (Título más alto)
+  ws['!rows'] = [{ hpt: 30 }, { hpt: 20 }, { hpt: 10 }, { hpt: 25 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+  
+  // Exportar con soporte de estilos
+  XLSX.writeFile(wb, nombreArchivo, { cellStyles: true });
+}
+
+// Función maestra para descargar archivos
+function descargarArchivo(contenido, nombreArchivo, tipoMime) {
+  const blob = new Blob([contenido], { type: tipoMime });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = nombreArchivo;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Función maestra para generar archivos Excel reales
+function generarExcel(datos, nombreArchivo, nombreHoja) {
+  // Crear hoja de trabajo
+  const ws = XLSX.utils.aoa_to_sheet(datos);
+  
+  // Ajustar el ancho de las columnas (opcional, para que se vea bonito)
+  ws['!cols'] = [{ wch: 25 }, { wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+
+  // Crear libro
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+
+  // Descargar
+  XLSX.writeFile(wb, nombreArchivo);
+}
+
+// Función para mostrar un mensaje flotante de éxito
+function mostrarToastExito(mensaje) {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.right = '20px';
+  toast.style.background = '#22C55E';
+  toast.style.color = 'white';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontWeight = 'bold';
+  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  toast.style.zIndex = '9999';
+  toast.innerText = "✅ " + mensaje;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.5s';
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+function cerrarDetalleFase() {
+  document.getElementById('timelineModal').classList.remove('active');
+}
+
+// Cerrar el modal si se hace clic fuera de la tarjeta
+document.getElementById('timelineModal').addEventListener('click', (e) => {
+  if (e.target.id === 'timelineModal') {
+    cerrarDetalleFase();
+  }
+});
+
+// Inicialización
 window.addEventListener('DOMContentLoaded', () => {
-  localStorage.clear();
+  buildFrentesCards();
   document.getElementById('introScreen').style.display = 'flex';
   document.getElementById('mainApp').style.display = 'none';
 });
